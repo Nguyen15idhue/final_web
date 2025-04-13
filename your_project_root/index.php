@@ -1,7 +1,7 @@
 <?php
 session_start();
 require 'config/database.php';
-require 'config/functions.php'; // Nếu có
+require_once __DIR__ . '/config/functions.php';
 
 // Kiểm tra đăng nhập
 if (isset($_SESSION['user_id'])) {

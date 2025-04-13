@@ -1,213 +1,348 @@
 <?php
 session_start();
+
+// --- Base URL Configuration ---
+$protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https://" : "http://";
+$domain = $_SERVER['HTTP_HOST'];
+// File này nằm trong /pages/purchase/ => cần lùi lại 2 cấp để đến gốc dự án
+$script_dir = dirname($_SERVER['PHP_SELF']); // Should be /pages/purchase
+$base_project_dir = dirname(dirname($script_dir)); // Lùi 2 cấp
+$base_url = $protocol . $domain . ($base_project_dir === '/' || $base_project_dir === '\\' ? '' : $base_project_dir);
+
+// --- Project Root Path for Includes ---
+$project_root_path = dirname(dirname(__DIR__)); // Lùi 2 cấp từ thư mục chứa file này (purchase)
+
+// --- Authentication Check ---
 if (!isset($_SESSION['user_id'])) {
-    header('Location: /your_project_root/?tab=login');
+    header('Location: ' . $base_url . '/login.php'); // Chuyển hướng về login ở gốc
     exit;
 }
-include '../../includes/header.php';
+
+// --- User Info (Example) ---
+$user_fullname = $_SESSION['fullname'] ?? 'Người dùng';
+
+// ===============================================
+// == ĐỊNH NGHĨA DỮ LIỆU CÁC GÓI ==
+// ===============================================
+// Trong thực tế, dữ liệu này nên được lấy từ cơ sở dữ liệu hoặc file cấu hình
+$all_packages = [
+    'monthly' => [
+        'id' => 'monthly', // Mã định danh dùng cho URL và logic
+        'name' => 'Gói 1 Tháng',
+        'price' => 100000,
+        'duration_text' => '/ tháng',
+        'features' => [
+            ['icon' => 'fa-check', 'text' => 'Truy cập đầy đủ tính năng', 'available' => true],
+            ['icon' => 'fa-check', 'text' => 'Hỗ trợ cơ bản', 'available' => true],
+            ['icon' => 'fa-check', 'text' => '10 lượt đo đạc / ngày', 'available' => true],
+            ['icon' => 'fa-times', 'text' => 'Không ưu tiên hỗ trợ', 'available' => false],
+        ],
+        'recommended' => false,
+        'button_text' => 'Chọn Gói'
+    ],
+    'quarterly' => [
+        'id' => 'quarterly',
+        'name' => 'Gói 3 Tháng',
+        'price' => 270000,
+        'duration_text' => '/ 3 tháng',
+        // 'savings_text' => '(Tiết kiệm 10%)', // Tùy chọn thêm text tiết kiệm
+        'features' => [
+            ['icon' => 'fa-check', 'text' => 'Truy cập đầy đủ tính năng', 'available' => true],
+            ['icon' => 'fa-check', 'text' => 'Hỗ trợ cơ bản', 'available' => true],
+            ['icon' => 'fa-check', 'text' => '15 lượt đo đạc / ngày', 'available' => true],
+            ['icon' => 'fa-check', 'text' => 'Ưu tiên hỗ trợ thấp', 'available' => true],
+        ],
+        'recommended' => false,
+        'button_text' => 'Chọn Gói'
+    ],
+    'biannual' => [
+        'id' => 'biannual',
+        'name' => 'Gói 6 Tháng',
+        'price' => 500000,
+        'duration_text' => '/ 6 tháng',
+        // 'savings_text' => '(Tiết kiệm ~17%)',
+        'features' => [
+            ['icon' => 'fa-check', 'text' => 'Truy cập đầy đủ tính năng', 'available' => true],
+            ['icon' => 'fa-check', 'text' => 'Hỗ trợ tiêu chuẩn', 'available' => true],
+            ['icon' => 'fa-check', 'text' => '25 lượt đo đạc / ngày', 'available' => true],
+            ['icon' => 'fa-check', 'text' => 'Ưu tiên hỗ trợ trung bình', 'available' => true],
+        ],
+        'recommended' => false,
+        'button_text' => 'Chọn Gói'
+    ],
+    'annual' => [
+        'id' => 'annual',
+        'name' => 'Gói 1 Năm',
+        'price' => 900000,
+        'duration_text' => '/ năm',
+        // 'savings_text' => '(Tiết kiệm 25%)',
+        'features' => [
+            ['icon' => 'fa-check', 'text' => 'Truy cập đầy đủ tính năng', 'available' => true],
+            ['icon' => 'fa-check', 'text' => 'Hỗ trợ ưu tiên', 'available' => true],
+            ['icon' => 'fa-check', 'text' => '50 lượt đo đạc / ngày', 'available' => true],
+            ['icon' => 'fa-check', 'text' => 'Ưu tiên hỗ trợ cao', 'available' => true],
+            ['icon' => 'fa-check', 'text' => 'Truy cập sớm tính năng mới', 'available' => true],
+        ],
+        'recommended' => true, // Đánh dấu gói này là phổ biến
+        'button_text' => 'Chọn Gói'
+    ],
+    'lifetime' => [
+        'id' => 'lifetime',
+        'name' => 'Gói Vĩnh Viễn',
+        'price' => 5000000,
+        'duration_text' => '/ trọn đời',
+        'features' => [
+            ['icon' => 'fa-check', 'text' => 'Truy cập đầy đủ tính năng', 'available' => true],
+            ['icon' => 'fa-check', 'text' => 'Hỗ trợ VIP trọn đời', 'available' => true],
+            ['icon' => 'fa-check', 'text' => 'Không giới hạn lượt đo đạc', 'available' => true],
+            ['icon' => 'fa-check', 'text' => 'Ưu tiên hỗ trợ cao nhất', 'available' => true],
+            ['icon' => 'fa-check', 'text' => 'Mọi cập nhật trong tương lai', 'available' => true],
+        ],
+        'recommended' => false,
+        'button_text' => 'Liên hệ mua' // Text khác cho gói này
+    ],
+];
+
+// --- Include Header ---
+include $project_root_path . '/includes/header.php';
 ?>
 
+<!-- CSS cho Trang Gói Tài Khoản -->
 <style>
+    /* --- Layout Wrapper (Giả sử đã có trong CSS chung) --- */
+    /* .dashboard-wrapper { ... } */
+    /* .content-wrapper { ... } */
+
+    /* --- Grid Container cho các Gói --- */
     .packages-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-        gap: 2rem;
-        padding: 2rem;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 1.5rem;
+        margin-top: 2rem;
     }
 
+    /* --- Styling cho Từng Card Gói --- */
     .package-card {
-        background: #fff;
-        border-radius: 10px;
+        background-color: white;
+        border: 1px solid var(--gray-200);
+        border-radius: var(--rounded-lg);
         padding: 2rem;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-        transition: transform 0.3s ease;
-        position: relative;
+        display: flex;
+        flex-direction: column;
+        text-align: center;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
     }
 
     .package-card:hover {
         transform: translateY(-5px);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
     }
 
-    .package-card.featured {
-        border: 2px solid #4CAF50;
+    /* Tiêu đề Gói */
+    .package-card h3 {
+        font-size: var(--font-size-lg);
+        font-weight: var(--font-semibold);
+        color: var(--gray-800);
+        margin-bottom: 0.75rem;
     }
 
-    .package-header {
-        text-align: center;
-        margin-bottom: 1.5rem;
-        position: relative;
-    }
-
-    .badge {
-        position: absolute;
-        top: -12px;
-        right: -12px;
-        background: #4CAF50;
-        color: white;
-        padding: 0.5rem 1rem;
-        border-radius: 20px;
-        font-size: 0.875rem;
-    }
-
-    .package-header h3 {
-        color: #333;
-        margin: 0 0 0.5rem 0;
-        font-size: 1.5rem;
-    }
-
-    .price {
+    /* Giá Gói */
+    .package-price {
         font-size: 1.75rem;
-        font-weight: bold;
-        color: #4CAF50;
+        font-weight: var(--font-bold);
+        color: var(--primary-600);
+        margin-bottom: 0.5rem; /* Giảm margin dưới giá */
+    }
+    .package-price .duration {
+        font-size: var(--font-size-sm);
+        font-weight: var(--font-normal);
+        color: var(--gray-500);
+    }
+    /* Text tiết kiệm (tùy chọn) */
+    .package-savings {
+        font-size: var(--font-size-xs);
+        color: var(--primary-600);
+        margin-bottom: 1.5rem; /* Đặt margin dưới text tiết kiệm */
+        display: block; /* Để nó chiếm 1 dòng riêng */
+        min-height: 1.2em; /* Giữ khoảng trống ngay cả khi không có text */
     }
 
+
+    /* Danh sách Tính năng */
     .package-features {
-        margin: 1.5rem 0;
-    }
-
-    .package-features ul {
         list-style: none;
         padding: 0;
-        margin: 0;
+        margin-bottom: 2rem;
+        text-align: left;
+        flex-grow: 1; /* Quan trọng: Đẩy nút xuống */
     }
 
     .package-features li {
-        margin: 0.75rem 0;
-        color: #666;
-    }
-
-    .purchase-btn {
-        width: 100%;
-        padding: 1rem;
-        border: none;
-        border-radius: 5px;
-        background: #2196F3;
-        color: white;
-        font-weight: bold;
-        cursor: pointer;
-        transition: background 0.3s ease;
-    }
-
-    .purchase-btn:hover {
-        background: #1976D2;
-    }
-
-    .purchase-btn.featured {
-        background: #4CAF50;
-    }
-
-    .purchase-btn.featured:hover {
-        background: #388E3C;
-    }
-
-    /* Thêm styles cho phần thông tin thời gian */
-    .current-time {
-        text-align: right;
-        padding: 1rem;
-        color: #666;
-        font-size: 0.9rem;
-    }
-
-    /* Thêm styles cho user info */
-    .user-info-bar {
-        background: #f5f5f5;
-        padding: 1rem;
-        margin-bottom: 2rem;
-        border-radius: 5px;
         display: flex;
-        justify-content: space-between;
         align-items: center;
+        gap: 0.75rem;
+        margin-bottom: 0.75rem;
+        color: var(--gray-700);
+        font-size: var(--font-size-sm);
     }
 
-    .user-info-bar span {
-        color: #333;
+    .package-features li i {
+        width: 1.1em; /* Đảm bảo icon có không gian */
+        text-align: center;
+        /* Màu sắc được đặt trong vòng lặp PHP */
+    }
+     .package-features li i.fa-check { color: var(--primary-500); }
+     .package-features li i.fa-times { color: var(--gray-400); }
+
+
+    /* Nút Chọn Gói */
+    .btn-select-package {
+        display: inline-block;
+        width: 100%;
+        padding: 0.75rem 1.5rem;
+        background-color: var(--primary-500);
+        color: white;
+        border: none;
+        border-radius: var(--rounded-md);
+        font-weight: var(--font-semibold);
+        text-decoration: none;
+        transition: background-color 0.2s ease;
+        cursor: pointer;
+        margin-top: auto; /* Đảm bảo nút luôn ở dưới cùng */
     }
 
-    .user-info-bar .username {
-        font-weight: bold;
-        color: #2196F3;
+    .btn-select-package:hover {
+        background-color: var(--primary-600);
+    }
+    /* Nút "Liên hệ mua" có thể có style khác nếu muốn */
+    .btn-select-package.contact {
+        background-color: var(--gray-600);
+    }
+    .btn-select-package.contact:hover {
+         background-color: var(--gray-700);
+    }
+
+    /* --- Styling cho Gói Đề Xuất --- */
+    .package-card.recommended {
+        border-color: var(--primary-500);
+        border-width: 2px;
+        position: relative;
+        box-shadow: 0 6px 20px rgba(34, 197, 94, 0.15);
+    }
+    .package-card.recommended:hover {
+         box-shadow: 0 8px 25px rgba(34, 197, 94, 0.2);
+    }
+
+    .recommended-badge {
+        position: absolute;
+        top: -1px;
+        left: 50%;
+        transform: translateX(-50%) translateY(-50%);
+        background-color: var(--primary-500);
+        color: white;
+        padding: 0.25rem 0.75rem;
+        border-radius: var(--rounded-full);
+        font-size: var(--font-size-xs);
+        font-weight: var(--font-semibold);
+        z-index: 1;
+    }
+
+    /* --- Responsive --- */
+    @media (max-width: 768px) {
+        .packages-grid {
+            grid-template-columns: 1fr;
+            gap: 1rem;
+        }
+         .content-wrapper {
+            padding: 1rem !important;
+        }
+        .package-card {
+            padding: 1.5rem;
+        }
+        .package-price {
+            font-size: 1.5rem;
+        }
     }
 </style>
 
 <div class="dashboard-wrapper">
-    <?php include '../../includes/sidebar.php'; ?>
-    <div class="content">
-        <div class="current-time">
-            <?php echo date('Y-m-d H:i:s'); ?> UTC
-        </div>
-        
-        <div class="user-info-bar">
-            <span>Xin chào, <span class="username"><?php echo htmlspecialchars($_SESSION['fullname'] ?? 'Khách'); ?></span></span>
-            <span>User ID: <?php echo htmlspecialchars($_SESSION['user_id'] ?? 'N/A'); ?></span>
-        </div>
+    <!-- Sidebar -->
+    <?php include $project_root_path . '/includes/sidebar.php'; ?>
 
-        <h2>Gói Tài Khoản</h2>
-        
+    <!-- Main Content -->
+    <main class="content-wrapper">
+        <h2 class="text-2xl font-semibold mb-4">Mua Gói Tài Khoản</h2>
+        <p class="text-gray-600 mb-6">Chọn gói phù hợp với nhu cầu sử dụng của bạn.</p>
+
+        <!-- Grid chứa các gói (Tạo bằng vòng lặp PHP) -->
         <div class="packages-grid">
-            <div class="package-card">
-                <div class="package-header">
-                    <h3>Gói Cơ Bản</h3>
-                    <span class="price">299.000 ₫</span>
-                </div>
-                <div class="package-features">
-                    <ul>
-                        <li>✅ 1 tài khoản Premium</li>
-                        <li>✅ Thời hạn 30 ngày</li>
-                        <li>✅ Hỗ trợ 24/7</li>
-                        <li>✅ Bảo hành trong thời gian sử dụng</li>
-                    </ul>
-                </div>
-                <button class="purchase-btn" onclick="handlePurchase('basic', 299000)">Mua Ngay</button>
-            </div>
 
-            <div class="package-card featured">
-                <div class="package-header">
-                    <span class="badge">Phổ biến</span>
-                    <h3>Gói Nâng Cao</h3>
-                    <span class="price">799.000 ₫</span>
-                </div>
-                <div class="package-features">
-                    <ul>
-                        <li>✅ 3 tài khoản Premium</li>
-                        <li>✅ Thời hạn 90 ngày</li>
-                        <li>✅ Hỗ trợ 24/7</li>
-                        <li>✅ Bảo hành trong thời gian sử dụng</li>
-                        <li>✅ Ưu tiên hỗ trợ</li>
-                    </ul>
-                </div>
-                <button class="purchase-btn featured" onclick="handlePurchase('premium', 799000)">Mua Ngay</button>
-            </div>
+            <?php foreach ($all_packages as $package): ?>
+                <?php
+                    // Xác định class cho card (thêm 'recommended' nếu cần)
+                    $card_classes = 'package-card';
+                    if ($package['recommended']) {
+                        $card_classes .= ' recommended';
+                    }
+                    // Tạo URL cho trang chi tiết
+                    $details_url = $base_url . '/pages/purchase/details.php?package=' . htmlspecialchars($package['id']);
+                    // Xác định class cho nút bấm (thêm 'contact' nếu là nút liên hệ)
+                    $button_classes = 'btn-select-package';
+                    $is_contact_button = ($package['button_text'] === 'Liên hệ mua'); // Check if it's the contact button
+                    if ($is_contact_button) {
+                         $button_classes .= ' contact';
+                         // Change URL if it's a contact button (optional)
+                         // $details_url = $base_url . '/contact.php'; // Example: Redirect to contact page
+                    }
+                ?>
+                <div class="<?php echo $card_classes; ?>">
+                    <?php if ($package['recommended']): ?>
+                        <div class="recommended-badge">Phổ biến</div>
+                    <?php endif; ?>
 
-            <div class="package-card">
-                <div class="package-header">
-                    <h3>Gói Doanh Nghiệp</h3>
-                    <span class="price">1.499.000 ₫</span>
-                </div>
-                <div class="package-features">
-                    <ul>
-                        <li>✅ 7 tài khoản Premium</li>
-                        <li>✅ Thời hạn 180 ngày</li>
-                        <li>✅ Hỗ trợ 24/7</li>
-                        <li>✅ Bảo hành trong thời gian sử dụng</li>
-                        <li>✅ Ưu tiên hỗ trợ cao cấp</li>
-                        <li>✅ Giảm giá gia hạn</li>
+                    <h3><?php echo htmlspecialchars($package['name']); ?></h3>
+
+                    <div class="package-price">
+                        <?php echo number_format($package['price'], 0, ',', '.'); ?>đ
+                        <span class="duration"><?php echo htmlspecialchars($package['duration_text']); ?></span>
+                    </div>
+
+                    <!-- Hiển thị text tiết kiệm nếu có -->
+                    <span class="package-savings">
+                        <?php echo isset($package['savings_text']) ? htmlspecialchars($package['savings_text']) : ' '; //   to keep space ?>
+                    </span>
+
+
+                    <ul class="package-features">
+                        <?php foreach ($package['features'] as $feature): ?>
+                            <li>
+                                <i class="fas <?php echo htmlspecialchars($feature['icon']); ?>" aria-hidden="true"></i>
+                                <span><?php echo htmlspecialchars($feature['text']); ?></span>
+                            </li>
+                        <?php endforeach; ?>
                     </ul>
+
+                    <!-- Nút bấm với link chính xác -->
+                    <?php // Chỉ tạo link đến details.php nếu không phải nút liên hệ ?>
+                    <a href="<?php echo $details_url; ?>" class="<?php echo $button_classes; ?>">
+                        <?php echo htmlspecialchars($package['button_text']); ?>
+                    </a>
                 </div>
-                <button class="purchase-btn" onclick="handlePurchase('business', 1499000)">Mua Ngay</button>
-            </div>
-        </div>
-    </div>
+            <?php endforeach; ?>
+
+        </div> <!-- /.packages-grid -->
+
+    </main>
 </div>
 
+<!-- JavaScript (Nếu cần) -->
 <script>
-function handlePurchase(packageType, amount) {
-    if (confirm('Bạn có chắc chắn muốn mua gói ' + packageType + ' với giá ' + amount.toLocaleString() + ' VNĐ?')) {
-        // Tại đây bạn có thể thêm code để chuyển hướng đến trang thanh toán
-        // hoặc mở modal thanh toán
-        alert('Đang chuyển đến trang thanh toán...');
-        // window.location.href = '/your_project_root/pages/purchase/checkout.php?package=' + packageType + '&amount=' + amount;
-    }
-}
+document.addEventListener('DOMContentLoaded', function() {
+    // Add JS logic here if needed
+});
 </script>
 
-<?php include '../../includes/footer.php'; ?>
+<?php
+// --- Include Footer ---
+include $project_root_path . '/includes/footer.php';
+?>
