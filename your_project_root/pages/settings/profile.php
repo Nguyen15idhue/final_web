@@ -20,7 +20,7 @@ if (!isset($_SESSION['user_id'])) {
 
 // --- User Info ---
 $user_id = $_SESSION['user_id'];
-$user_fullname = $_SESSION['fullname'] ?? 'Người dùng chưa cập nhật';
+$user_username = $_SESSION['username'] ?? 'Người dùng chưa cập nhật';
 // --- Lấy thông tin khác từ DB (Giả lập) ---
 // Trong thực tế, bạn sẽ truy vấn CSDL dựa vào $user_id
 $user_email = $_SESSION['user_email'] ?? 'email@example.com'; // Lấy từ session hoặc DB
@@ -38,32 +38,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // }
 
     // --- Lấy và làm sạch dữ liệu ---
-    $new_fullname = trim(htmlspecialchars($_POST['fullname'] ?? ''));
+    $new_username = trim(htmlspecialchars($_POST['username'] ?? ''));
     $new_email = trim(filter_var($_POST['email'] ?? '', FILTER_SANITIZE_EMAIL));
     $new_phone = trim(htmlspecialchars(preg_replace('/[^0-9\s\-+()]/', '', $_POST['phone'] ?? ''))); // Chỉ giữ số, khoảng trắng, -, +, ()
 
     // --- Validate dữ liệu ---
-    if (empty($new_fullname)) {
+    if (empty($new_username)) {
         $error_message = "Vui lòng nhập họ và tên.";
     } elseif (empty($new_email) || !filter_var($new_email, FILTER_VALIDATE_EMAIL)) {
         $error_message = "Vui lòng nhập địa chỉ email hợp lệ.";
     } else {
         // --- Cập nhật vào CSDL (Giả lập) ---
         // Trong thực tế, bạn sẽ thực hiện câu lệnh UPDATE ở đây
-        // $stmt = $pdo->prepare("UPDATE users SET fullname = ?, email = ?, phone = ? WHERE id = ?");
-        // $result = $stmt->execute([$new_fullname, $new_email, $new_phone, $user_id]);
+        // $stmt = $pdo->prepare("UPDATE users SET username = ?, email = ?, phone = ? WHERE id = ?");
+        // $result = $stmt->execute([$new_username, $new_email, $new_phone, $user_id]);
 
         // Giả lập thành công
         $update_successful = true; // Đặt là false để test lỗi
 
         if ($update_successful) {
             // Cập nhật lại thông tin trong session
-            $_SESSION['fullname'] = $new_fullname;
+            $_SESSION['username'] = $new_username;
             $_SESSION['user_email'] = $new_email; // Cập nhật nếu bạn lưu email trong session
             $_SESSION['user_phone'] = $new_phone; // Cập nhật nếu bạn lưu phone trong session
 
             // Gán lại biến để hiển thị giá trị mới ngay lập tức trên form
-            $user_fullname = $new_fullname;
+            $user_username = $new_username;
             $user_email = $new_email;
             $user_phone = $new_phone;
 
@@ -279,8 +279,8 @@ include $project_root_path . '/includes/header.php';
                     <!-- <input type="text" id="username" class="form-control" value="<?php echo htmlspecialchars($user_username); ?>" disabled> -->
                 </div>
                 <div class="form-group">
-                    <label for="fullname">Họ và Tên:</label>
-                    <input type="text" id="fullname" name="fullname" class="form-control" value="<?php echo htmlspecialchars($user_fullname); ?>" required>
+                    <label for="username">Họ và Tên:</label>
+                    <input type="text" id="username" name="username" class="form-control" value="<?php echo htmlspecialchars($user_username); ?>" required>
                 </div>
                  <div class="form-group">
                     <label for="email">Địa chỉ Email:</label>

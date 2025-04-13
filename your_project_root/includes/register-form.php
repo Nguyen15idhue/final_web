@@ -2,8 +2,8 @@
     <h3>Đăng ký</h3>
     <form action="/your_project_root/actions/auth/register.php" method="POST">
         <div>
-            <label for="fullname">Họ và tên:</label>
-            <input type="text" id="fullname" name="fullname" value="<?php echo isset($_POST['fullname']) ? htmlspecialchars($_POST['fullname']) : ''; ?>" required>
+            <label for="username">Họ và tên:</label>
+            <input type="text" id="username" name="username" value="<?php echo isset($_POST['username']) ? htmlspecialchars($_POST['username']) : ''; ?>" required>
         </div>
         <div>
             <label for="email">Email:</label>

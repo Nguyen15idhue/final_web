@@ -19,7 +19,7 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 // --- User Info (Example) ---
-$user_fullname = $_SESSION['fullname'] ?? 'Người dùng';
+$user_username = $_SESSION['username'] ?? 'Người dùng';
 
 // ===============================================
 // == ĐỊNH NGHĨA DỮ LIỆU CÁC GÓI ==

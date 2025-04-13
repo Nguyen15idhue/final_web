@@ -19,7 +19,7 @@ if (!isset($_SESSION['user_id'])) {
 
 // --- User Info ---
 $user_id = $_SESSION['user_id'];
-$user_fullname = $_SESSION['fullname'] ?? 'Người dùng'; // Lấy từ session để hiển thị nếu cần
+$user_username = $_SESSION['username'] ?? 'Người dùng'; // Lấy từ session để hiển thị nếu cần
 
 // --- Lấy thông tin thanh toán hiện tại từ DB (Giả lập) ---
 // Trong thực tế, bạn sẽ truy vấn bảng `user_payment_details` hoặc tương tự dựa vào $user_id

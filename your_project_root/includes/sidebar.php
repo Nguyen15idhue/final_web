@@ -36,7 +36,7 @@ function is_current_page($page_name) {
     return $current_script === $page_name;
 }
 
-$user_fullname = isset($_SESSION['fullname']) ? htmlspecialchars($_SESSION['fullname']) : 'Khách hàng';
+$user_username = isset($_SESSION['username']) ? htmlspecialchars($_SESSION['username']) : 'Khách hàng';
 ?>
 
 <!-- Hamburger button for mobile -->
@@ -63,7 +63,7 @@ $user_fullname = isset($_SESSION['fullname']) ? htmlspecialchars($_SESSION['full
                 <i class="fas fa-user"></i>
             </div>
             <div class="user-text">
-                <span class="user-name"><?php echo $user_fullname; ?></span>
+                <span class="user-name"><?php echo $user_username; ?></span>
                 <span class="user-role">Khách hàng</span>
             </div>
         </div>

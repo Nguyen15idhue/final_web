@@ -19,14 +19,14 @@ if (!isset($_SESSION['user_id'])) {
 
 // --- User Info ---
 $user_id = $_SESSION['user_id'];
-$user_fullname = $_SESSION['fullname'] ?? 'Người dùng';
+$user_username = $_SESSION['username'] ?? 'Người dùng';
 
 // --- Lấy thông tin xuất hóa đơn hiện tại từ DB (Giả lập) ---
 // Trong thực tế, bạn sẽ truy vấn bảng `user_invoice_details` hoặc tương tự dựa vào $user_id
 $invoice_company_name = ''; // Tên công ty/đơn vị
 $invoice_tax_id = '';       // Mã số thuế
 $invoice_address = '';      // Địa chỉ đăng ký kinh doanh
-$invoice_buyer_name = $user_fullname; // Mặc định là tên người dùng, có thể cho sửa
+$invoice_buyer_name = $user_username; // Mặc định là tên người dùng, có thể cho sửa
 $invoice_email = '';        // Email nhận hóa đơn (có thể khác email tài khoản)
 
 // --- Giả lập truy vấn DB ---
@@ -37,7 +37,7 @@ $invoice_email = '';        // Email nhận hóa đơn (có thể khác email t�
 //     $invoice_company_name = $invoice_info['company_name'];
 //     $invoice_tax_id = $invoice_info['tax_id'];
 //     $invoice_address = $invoice_info['address'];
-//     $invoice_buyer_name = $invoice_info['buyer_name'] ?: $user_fullname; // Ưu tiên tên đã lưu, nếu rỗng thì lấy tên user
+//     $invoice_buyer_name = $invoice_info['buyer_name'] ?: $user_username; // Ưu tiên tên đã lưu, nếu rỗng thì lấy tên user
 //     $invoice_email = $invoice_info['email'];
 // }
 
@@ -53,7 +53,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $new_company_name = trim(htmlspecialchars($_POST['company_name'] ?? ''));
     $new_tax_id = trim(htmlspecialchars(preg_replace('/[^\d-]/', '', $_POST['tax_id'] ?? ''))); // Chỉ giữ số và dấu gạch ngang
     $new_address = trim(htmlspecialchars($_POST['address'] ?? ''));
-    $new_buyer_name = trim(htmlspecialchars($_POST['buyer_name'] ?? $user_fullname)); // Lấy tên user nếu không nhập
+    $new_buyer_name = trim(htmlspecialchars($_POST['buyer_name'] ?? $user_username)); // Lấy tên user nếu không nhập
     $new_email = trim(filter_var($_POST['email'] ?? '', FILTER_SANITIZE_EMAIL));
 
     // --- Validate dữ liệu ---

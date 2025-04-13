@@ -19,7 +19,7 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 // --- User Info ---
-$user_fullname = $_SESSION['fullname'] ?? 'Người dùng';
+$user_username = $_SESSION['username'] ?? 'Người dùng';
 $user_id = $_SESSION['user_id'];
 
 // --- KIỂM TRA TRẠNG THÁI NGƯỜI GIỚI THIỆU (GIẢ LẬP) ---

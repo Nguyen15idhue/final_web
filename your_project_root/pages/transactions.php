@@ -1,16 +1,14 @@
 <?php
 session_start();
 
-// --- Base URL Configuration ---
+// --- Base URL và Path ---
 $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https://" : "http://";
 $domain = $_SERVER['HTTP_HOST'];
-// Giả sử file này nằm trong /pages/
+// File này nằm trong /pages/ => cần lùi lại 1 cấp để đến gốc dự án
 $script_dir = dirname($_SERVER['PHP_SELF']); // Should be /pages
 $base_project_dir = dirname($script_dir); // Lùi 1 cấp
 $base_url = $protocol . $domain . ($base_project_dir === '/' || $base_project_dir === '\\' ? '' : $base_project_dir);
-
-// --- Project Root Path for Includes ---
-$project_root_path = dirname(__DIR__); // Lùi 1 cấp từ thư mục chứa file này (pages)
+$project_root_path = dirname(__DIR__); // Lùi 1 cấp từ /pages
 
 // --- Authentication Check ---
 if (!isset($_SESSION['user_id'])) {
@@ -18,406 +16,607 @@ if (!isset($_SESSION['user_id'])) {
     exit;
 }
 
-// --- User Info ---
-$user_fullname = $_SESSION['fullname'] ?? 'Người dùng';
-$user_id = $_SESSION['user_id'];
-
 // --- Include Header ---
 include $project_root_path . '/includes/header.php';
-// ====> THÊM DÒNG NÀY ĐỂ INCLUDE FILE HÀM <====
-include $project_root_path . '/config/functions.php'; // Sửa thành '/config/'
 
-// --- Dữ liệu giao dịch giả lập (Thay bằng truy vấn CSDL thực tế) ---
+// ===============================================
+// == DỮ LIỆU GIAO DỊCH GIẢ LẬP ==
+// ===============================================
+// Trong thực tế, lấy từ CSDL dựa trên user_id
 $transactions = [
     [
-        'id' => 'GD12345',
-        'timestamp' => '2024-07-15 10:30:15',
-        'description' => 'Mua Gói 1 Năm',
+        'id' => 'TXN1001',
+        'transaction_code' => 'GD20240515A01',
+        'date' => '2024-05-15 10:30:00',
+        'package_name' => 'Gói 1 Năm',
+        'quantity' => 1,
+        'province' => 'Hà Nội',
         'amount' => 900000,
-        'method' => 'VietQR',
-        'status' => 'completed', // completed, pending, failed, cancelled
-        'invoice_id' => 'HD001',
-        'proof_needed' => false
+        'payment_method' => 'Chuyển khoản VietQR',
+        'status' => 'completed', // 'completed', 'pending', 'failed', 'refunded'
+        'description' => 'Thanh toán gia hạn gói Premium.',
+        'invoice_available' => true,
+        'payment_proof_uploaded' => true,
+        'payment_proof_url' => '/path/to/proof/image1.jpg', // Link ảnh (nếu có)
+        'related_account_id' => '12345',
     ],
     [
-        'id' => 'GD12346',
-        'timestamp' => '2024-07-14 15:05:00',
-        'description' => 'Mua Gói 3 Tháng',
-        'amount' => 270000,
-        'method' => 'Chuyển khoản thủ công',
+        'id' => 'TXN1002',
+        'transaction_code' => 'GD20240514B02',
+        'date' => '2024-05-14 15:00:00',
+        'package_name' => 'Gói 3 Tháng',
+        'quantity' => 2,
+        'province' => 'TP Hồ Chí Minh',
+        'amount' => 540000, // 270000 * 2
+        'payment_method' => 'Chuyển khoản Ngân hàng',
         'status' => 'pending',
-        'invoice_id' => null,
-        'proof_needed' => true
+        'description' => 'Đang chờ xác nhận thanh toán thủ công.',
+        'invoice_available' => false,
+        'payment_proof_uploaded' => false,
+        'payment_proof_url' => null,
+        'related_account_id' => null,
+    ],
+    [
+        'id' => 'TXN1003',
+        'transaction_code' => 'GD20240420C03',
+        'date' => '2024-04-20 08:15:00',
+        'package_name' => 'Gói 1 Tháng',
+        'quantity' => 1,
+        'province' => 'Đà Nẵng',
+        'amount' => 100000,
+        'payment_method' => 'Thanh toán Online (Failed)',
+        'status' => 'failed',
+        'description' => 'Thanh toán không thành công do thẻ hết hạn.',
+        'invoice_available' => false,
+        'payment_proof_uploaded' => false,
+        'payment_proof_url' => null,
+        'related_account_id' => null,
     ],
      [
-        'id' => 'GD12340',
-        'timestamp' => '2024-06-10 08:00:00',
-        'description' => 'Gia hạn Gói 1 Tháng',
-        'amount' => 100000,
-        'method' => 'VNPAY',
-        'status' => 'failed',
-        'invoice_id' => null,
-        'proof_needed' => false,
-        // ** THÊM LÝ DO THẤT BẠI **
-        'failure_reason' => 'Thanh toán bị từ chối bởi cổng thanh toán (Mã lỗi: 99)'
-    ],
-    [
-        'id' => 'GD12339',
-        'timestamp' => '2024-05-15 11:00:00',
-        'description' => 'Mua Gói 6 Tháng',
+        'id' => 'TXN1004',
+        'transaction_code' => 'GD20240310D04',
+        'date' => '2024-03-10 11:00:00',
+        'package_name' => 'Gói 6 Tháng',
+        'quantity' => 1,
+        'province' => 'Cần Thơ',
         'amount' => 500000,
-        'method' => 'VietQR',
+        'payment_method' => 'Chuyển khoản VietQR',
         'status' => 'completed',
-        'invoice_id' => 'HD002',
-        'proof_needed' => false
+        'description' => 'Kích hoạt gói mới.',
+        'invoice_available' => true,
+        'payment_proof_uploaded' => true, // Giả sử đã upload
+        'payment_proof_url' => '#', // Link ảnh thật
+        'related_account_id' => '12344',
     ],
-    [
-        'id' => 'GD12341',
-        'timestamp' => '2024-06-11 09:15:00',
-        'description' => 'Mua Gói Vĩnh Viễn',
-        'amount' => 5000000,
-        'method' => 'Chuyển khoản thủ công',
-        'status' => 'failed',
-        'invoice_id' => null,
-        'proof_needed' => false,
-        // ** THÊM LÝ DO THẤT BẠI **
-        'failure_reason' => 'Sai nội dung chuyển khoản.'
-    ],
+    // Thêm giao dịch khác nếu cần
 ];
 
-// Hàm helper để lấy text và class cho status
-function get_transaction_status_display($status) {
-    switch ($status) {
-        case 'completed':
-            return ['text' => 'Hoàn thành', 'class' => 'status-completed'];
-        case 'pending':
-            return ['text' => 'Chờ xử lý', 'class' => 'status-pending'];
-        case 'failed':
-            return ['text' => 'Thất bại', 'class' => 'status-failed'];
-         case 'cancelled':
-            return ['text' => 'Đã hủy', 'class' => 'status-cancelled'];
-        default:
-            return ['text' => 'Không xác định', 'class' => 'status-unknown'];
+// Hàm định dạng ngày giờ
+function format_datetime_display($datetime_str) {
+    if (!$datetime_str) return 'N/A';
+    try {
+        $date = new DateTime($datetime_str);
+        return $date->format('H:i d-m-Y'); // Định dạng hh:mm dd-mm-yyyy
+    } catch (Exception $e) {
+        return 'N/A';
     }
 }
-
 ?>
 
+<!-- CSS cho Trang Quản Lý Giao Dịch -->
 <style>
-    /* --- Kế thừa các style trước --- */
-     .content-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; padding: 0.8rem 1.5rem; background: var(--gray-50); border-radius: var(--rounded-md); border: 1px solid var(--gray-200); }
-     .user-info span { color: var(--gray-600); font-size: var(--font-size-sm); }
-     .user-info .highlight { color: var(--primary-600); font-weight: var(--font-semibold); }
-    .transactions-wrapper { padding: 0rem 1rem 1rem 1rem; }
-    .upload-proof-section { background: white; border: 1px solid var(--primary-200); border-radius: var(--rounded-lg); padding: 1.5rem; margin-bottom: 2rem; }
-    .upload-proof-section h3 { font-size: var(--font-size-lg); font-weight: var(--font-semibold); color: var(--primary-700); margin-bottom: 1rem; }
-    .upload-proof-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; align-items: end; }
-    .form-group { margin-bottom: 0; }
-    .form-group label { display: block; font-weight: var(--font-medium); color: var(--gray-700); margin-bottom: 0.5rem; font-size: var(--font-size-sm); }
-    .form-control { width: 100%; padding: 0.6rem 0.8rem; border: 1px solid var(--gray-300); border-radius: var(--rounded-md); font-size: var(--font-size-sm); transition: border-color 0.2s ease; }
-    .form-control:focus { outline: none; border-color: var(--primary-500); box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.2); }
-    .form-control[type="file"] { padding: 0.4rem 0.8rem; }
-    .btn-upload { padding: 0.65rem 1.5rem; background-color: var(--primary-500); color: white; border: none; border-radius: var(--rounded-md); font-weight: var(--font-semibold); cursor: pointer; transition: background-color 0.2s ease; font-size: var(--font-size-sm); white-space: nowrap; }
-    .btn-upload:hover { background-color: var(--primary-600); }
-    .filter-section { margin-bottom: 1.5rem; display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; }
-    .filter-button { padding: 0.4rem 0.9rem; border: 1px solid var(--gray-300); border-radius: var(--rounded-full); background: white; cursor: pointer; transition: all 0.2s ease; font-size: var(--font-size-sm); color: var(--gray-700); }
-    .filter-button.active { background: var(--primary-500); color: white; border-color: var(--primary-500); }
-    .search-box { padding: 0.5rem 0.8rem; border: 1px solid var(--gray-300); border-radius: var(--rounded-md); width: 250px; max-width: 100%; font-size: var(--font-size-sm); margin-left: auto; }
-     .search-box:focus { outline: none; border-color: var(--primary-500); }
-    .transactions-table-wrapper { overflow-x: auto; background: white; border-radius: var(--rounded-lg); border: 1px solid var(--gray-200); box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
-    .transactions-table { width: 100%; border-collapse: collapse; }
-    .transactions-table th, .transactions-table td { padding: 0.9rem 1rem; text-align: left; border-bottom: 1px solid var(--gray-200); font-size: var(--font-size-sm); vertical-align: middle; }
-    .transactions-table th { background-color: var(--gray-50); font-weight: var(--font-semibold); color: var(--gray-600); white-space: nowrap; }
-     .transactions-table tr:last-child td { border-bottom: none; }
-     .transactions-table tr:hover { background-color: var(--gray-50); }
-     .transactions-table td.amount { font-weight: var(--font-medium); color: var(--gray-800); white-space: nowrap; }
-     .transactions-table td.status { text-align: center; }
-     .transactions-table td.actions {
-        /* text-align: right; */ /* Không cần nữa nếu dùng flex */
-        /* white-space: nowrap; */ /* Không cần nữa nếu dùng flex */
-
-        /* --- ÁP DỤNG FLEXBOX CHO CĂN CHỈNH DỌC --- */
-        display: flex;              /* Kích hoạt Flexbox */
-        flex-direction: column;     /* Xếp các item (nút) theo chiều dọc */
-        align-items: flex-end;      /* Căn các nút sang bên phải của ô td */
-                                    /* Hoặc dùng align-items: stretch; nếu muốn nút rộng hết ô */
-                                    /* Hoặc align-items: center; để căn giữa */
-        gap: 0.3rem;                /* Khoảng cách giữa các nút theo chiều dọc */
+    /* --- Kế thừa các biến màu từ style.css hoặc định nghĩa lại --- */
+    :root {
+        --blue-500: #2196F3;
+        --blue-600: #1976D2;
+        --green-500: #4CAF50;
+        --green-600: #388E3C;
+        --green-bg-light: #e8f5e9;
+        --green-text-dark: #2e7d32;
+        --red-500: #F44336;
+        --red-600: #D32F2F;
+        --red-bg-light: #ffebee;
+        --red-text-dark: #c62828;
+        --orange-500: #FF9800;
+        --orange-600: #F57C00;
+        --orange-bg-light: #fff3e0;
+        --orange-text-dark: #ef6c00;
+        --gray-bg-light: #f5f5f5; /* Màu nền cho chi tiết */
     }
-    .status-badge { padding: 0.3rem 0.8rem; border-radius: var(--rounded-full); font-size: 0.8rem; display: inline-block; font-weight: var(--font-medium); text-align: center; min-width: 80px; }
-    .status-completed { background: var(--badge-green-bg); color: var(--badge-green-text); }
-    .status-pending { background: var(--badge-yellow-bg); color: var(--badge-yellow-text); }
-    .status-failed { background: var(--badge-red-bg); color: var(--badge-red-text); }
-    .status-cancelled { background: var(--gray-200); color: var(--gray-600); }
-    .status-unknown { background: var(--gray-100); color: var(--gray-500); }
-    .action-button {
-        /* padding: 0.4rem 0.8rem; */ /* Có thể giữ hoặc điều chỉnh padding */
-        padding: 0.5rem 0.5rem; /* Tăng padding dọc, giảm ngang chút */
-        border: none;
+
+    /* --- Content Wrapper --- */
+    /* .content-wrapper { padding: 1.5rem; } */
+
+    /* --- Header Trang --- */
+    .transaction-page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid var(--gray-200);
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+    .transaction-page-header h2 {
+         margin: 0;
+         font-size: 1.75rem;
+         font-weight: var(--font-semibold);
+    }
+
+    /* --- Filter & Search Section --- */
+    .filter-search-section {
+        display: flex;
+        gap: 0.75rem;
+        align-items: center;
+        margin-bottom: 2rem;
+        flex-wrap: wrap;
+    }
+    .filter-tabs button {
+        padding: 0.5rem 1.25rem;
+        border: 1px solid var(--gray-300);
+        border-radius: var(--rounded-md);
+        background-color: white;
+        color: var(--gray-700);
+        cursor: pointer;
+        transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+        font-size: var(--font-size-sm);
+        margin-right: 0.5rem;
+    }
+    .filter-tabs button:last-child { margin-right: 0;}
+    .filter-tabs button.active {
+        background-color: var(--blue-500);
+        color: white;
+        border-color: var(--blue-500);
+    }
+    .filter-tabs button:hover:not(.active) { background-color: var(--gray-100); }
+    .search-input {
+        padding: 0.55rem 1rem;
+        border: 1px solid var(--gray-300);
+        border-radius: var(--rounded-md);
+        font-size: var(--font-size-sm);
+        min-width: 250px;
+        flex-grow: 1;
+    }
+    .search-input:focus {
+        outline: none;
+        border-color: var(--blue-500);
+        box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.2);
+    }
+
+    /* --- Grid Danh Sách Giao Dịch --- */
+    .transactions-list {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem; /* Giảm khoảng cách giữa các card */
+    }
+
+    /* --- Card Giao Dịch --- */
+    .transaction-card {
+        background-color: white;
+        border-radius: var(--rounded-lg);
+        border: 1px solid var(--gray-200);
+        /* box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04); */ /* Giảm shadow */
+        overflow: hidden; /* Để border-left hiển thị đúng */
+        position: relative;
+        border-left-width: 4px; /* Dùng border-left thay vì border-top */
+        border-left-style: solid;
+        padding: 1rem 1.5rem; /* Điều chỉnh padding */
+        display: grid;
+        /* Layout 3 cột chính + 1 cột hành động */
+        grid-template-columns: minmax(150px, 1fr) minmax(180px, 1.2fr) minmax(120px, 0.8fr) auto;
+        gap: 1rem 1.5rem;
+        align-items: center; /* Căn giữa các mục theo chiều dọc */
+    }
+    /* Màu border-left theo status */
+    .transaction-card.status-completed { border-left-color: var(--green-500); }
+    .transaction-card.status-pending { border-left-color: var(--orange-500); }
+    .transaction-card.status-failed { border-left-color: var(--red-500); }
+    .transaction-card.status-refunded { border-left-color: var(--gray-400); } /* Thêm nếu cần */
+
+    /* --- Các khu vực trong Card --- */
+    .card-section {
+        display: flex;
+        flex-direction: column;
+        gap: 0.2rem; /* Khoảng cách nhỏ */
+    }
+     .card-section .label { /* Nhãn nhỏ */
+        font-size: var(--font-size-xs);
+        color: var(--gray-500);
+        margin-bottom: 0.1rem;
+        display: block;
+    }
+    .card-section .value { /* Giá trị chính */
+        font-size: var(--font-size-sm);
+        color: var(--gray-800);
+        font-weight: var(--font-medium);
+        line-height: 1.4;
+    }
+     .card-section .value.transaction-code {
+        font-weight: var(--font-semibold);
+        color: var(--gray-900);
+    }
+     .card-section .value.amount {
+         color: var(--primary-600);
+         font-weight: var(--font-semibold);
+     }
+
+    /* Trạng thái */
+    .badge-status {
+        padding: 0.3rem 0.8rem;
+        border-radius: var(--rounded-full);
+        font-size: var(--font-size-xs);
+        font-weight: var(--font-semibold);
+        display: inline-block;
+        text-align: center;
+        white-space: nowrap;
+    }
+    .status-completed { background-color: var(--green-bg-light); color: var(--green-text-dark); }
+    .status-pending { background-color: var(--orange-bg-light); color: var(--orange-text-dark); }
+    .status-failed { background-color: var(--red-bg-light); color: var(--red-text-dark); }
+    .status-refunded { background-color: var(--gray-bg-light); color: var(--gray-600); }
+
+    /* Khu vực Hành động */
+    .card-actions {
+        /* grid-column: 4 / 5; */ /* Tự động ở cột cuối */
+        justify-self: end; /* Căn phải */
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap; /* Cho phép xuống dòng nếu không đủ chỗ */
+        justify-content: flex-end;
+    }
+    .btn-action {
+        padding: 0.35rem 0.8rem; /* Nút nhỏ hơn */
+        border: 1px solid transparent;
         border-radius: var(--rounded-md);
         cursor: pointer;
-        font-size: var(--font-size-xs);
-        transition: background 0.2s ease, opacity 0.2s ease;
-        /* margin-left: 0.5rem; */ /* Bỏ margin-left vì đã dùng flex gap */
-        opacity: 0.9;
-        text-decoration: none; /* Đảm bảo thẻ <a> cũng giống button */
-        color: white; /* Mặc định màu chữ trắng cho các nút nền màu */
-        display: block; /* Hoặc inline-block nếu không dùng flex cho td */
-
-        /* --- ĐẶT KÍCH THƯỚC CỐ ĐỊNH VÀ CĂN GIỮA --- */
-        width: 100px;           /* Đặt chiều rộng cố định (điều chỉnh giá trị nếu cần) */
-        box-sizing: border-box; /* Đảm bảo padding và border nằm trong width */
-        text-align: center;     /* Căn giữa nội dung (icon + text) */
-        white-space: nowrap;    /* Ngăn text dài xuống dòng */
-        overflow: hidden;       /* Ẩn text tràn */
-        text-overflow: ellipsis;/* Hiển thị ... nếu text quá dài */
+        font-size: var(--font-size-xs); /* Chữ nhỏ hơn */
+        font-weight: var(--font-medium);
+        transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+        text-decoration: none;
+        display: inline-flex; /* Căn icon và text */
+        align-items: center;
+        gap: 0.3rem;
     }
-    .action-button:hover { opacity: 1; }
+    /* Style nút khác nhau */
+    .btn-details { background-color: var(--blue-500); color: white; }
+    .btn-details:hover { background-color: var(--blue-600); }
 
-    /* Điều chỉnh màu chữ cho nút có nền sáng */
-    .btn-details { background: var(--gray-200); color: var(--gray-700); }
-    .btn-details:hover { background: var(--gray-300); }
-    .btn-upload-proof { background: var(--badge-yellow-bg); color: var(--badge-yellow-text); border: 1px solid var(--badge-yellow-text); width: calc(100px - 2px); /* Trừ đi border */}
-    .btn-upload-proof:hover { background: var(--badge-yellow-text); color: white; }
-    .btn-reason { background: var(--badge-red-bg); color: var(--badge-red-text); }
-    .btn-reason:hover { background: var(--badge-red-text); color: white; }
-    .btn-invoice { background: var(--primary-500); color: white; }
-    .btn-invoice:hover { background: var(--primary-600); }
-    .btn-upload-proof { background: var(--badge-yellow-bg); color: var(--badge-yellow-text); border: 1px solid var(--badge-yellow-text); }
-    .btn-upload-proof:hover { background: var(--badge-yellow-text); color: white; }
-    .btn-details { background: var(--gray-200); color: var(--gray-700); }
-    .btn-details:hover { background: var(--gray-300); }
-
-    /* --- THÊM STYLE CHO NÚT XEM LÝ DO --- */
-    .btn-reason {
-        background: var(--badge-red-bg);
-        color: var(--badge-red-text);
-        /* border: 1px solid var(--badge-red-text); */ /* Bỏ border nếu muốn */
+    .btn-upload-proof { background-color: white; color: var(--primary-500); border-color: var(--primary-500); }
+    .btn-upload-proof:hover { background-color: var(--primary-50); }
+    .btn-upload-proof.uploaded { /* Style khi đã upload */
+        background-color: var(--green-bg-light);
+        color: var(--green-text-dark);
+        border-color: var(--green-bg-light);
+        cursor: default; /* Hoặc link đến xem ảnh */
     }
-    .btn-reason:hover {
-        background: var(--badge-red-text);
-        color: white;
-    }
-    /* --- End Style nút xem lý do --- */
+    .btn-upload-proof.uploaded:hover { background-color: var(--green-bg-light); }
 
-    .empty-state { text-align: center; padding: 3rem 1rem; color: var(--gray-500); background: white; border-radius: var(--rounded-lg); border: 1px dashed var(--gray-300); margin-top: 1.5rem; }
-    .empty-state i { font-size: 2.5rem; color: var(--gray-400); margin-bottom: 1rem; display: block; }
+
+    .btn-invoice { background-color: var(--gray-600); color: white; }
+    .btn-invoice:hover { background-color: var(--gray-700); }
+    .btn-invoice:disabled,
+    .btn-upload-proof:disabled { /* Style khi bị vô hiệu hóa */
+        background-color: var(--gray-200);
+        color: var(--gray-400);
+        border-color: var(--gray-200);
+        cursor: not-allowed;
+    }
+
+    /* --- Hidden File Input --- */
+    .hidden-file-input {
+        display: none;
+    }
+
+    /* --- Trạng thái trống --- */
+    .empty-state { text-align: center; padding: 3rem; color: var(--gray-500); background-color: white; border-radius: var(--rounded-lg); }
+    .empty-state h3 { color: var(--gray-700); margin-bottom: 0.5rem; }
+    .empty-state p { margin-bottom: 1.5rem; }
+    .buy-now-btn { /* Style lại nút mua */
+        display: inline-block; padding: 0.75rem 1.5rem; background: var(--primary-500); color: white; text-decoration: none; border-radius: var(--rounded-md); transition: background 0.3s ease; font-weight: var(--font-semibold);
+    }
+    .buy-now-btn:hover { background: var(--primary-600); }
+
+
+    /* --- Responsive --- */
     @media (max-width: 992px) {
-        .transactions-table th:nth-child(3), .transactions-table td:nth-child(3),
-        .transactions-table th:nth-child(5), .transactions-table td:nth-child(5) { }
-        .transactions-table th, .transactions-table td { padding: 0.8rem 0.6rem; }
-        .action-button { padding: 0.4rem 0.6rem; }
+        .transaction-card {
+            grid-template-columns: repeat(2, 1fr) auto; /* 2 cột + hành động */
+            padding: 1rem;
+        }
+        .card-actions {
+           grid-column: 3 / 4; /* Đẩy sang cột 3 */
+           flex-direction: column; /* Xếp dọc lại */
+           align-items: flex-end;
+        }
+        /* Ẩn bớt label nếu cần */
+        /* .card-section .label { display: none; } */
     }
+
      @media (max-width: 768px) {
-         .content-header { flex-direction: column; align-items: flex-start; gap: 0.5rem;}
-         .filter-section { flex-direction: column; align-items: stretch; }
-         .search-box { width: 100%; margin-left: 0; }
-         .upload-proof-form { grid-template-columns: 1fr; }
-         .transactions-table th:nth-child(2), .transactions-table td:nth-child(2) { display: none; }
-         .transactions-table td.actions {
-             align-items: flex-start; /* Căn trái các nút trên mobile nếu muốn */
-             width: auto; /* Cho phép td co giãn */
-         }
-         .action-button {
-             /* width: 90px; */ /* Có thể giảm width nút trên mobile nếu cần */
-             margin-right: 0;
-             margin-bottom: 0; /* Không cần margin bottom vì đã có gap */
-             /* display: inline-block; */ /* Bỏ dòng này nếu giữ flex */
-         }
+        .transaction-card {
+             grid-template-columns: 1fr auto; /* 1 cột nội dung + hành động */
+             gap: 0.75rem 1rem;
+        }
+        .card-section {
+            /* Có thể cần gộp các section lại */
+            grid-column: 1 / 2; /* Tất cả nội dung vào cột 1 */
+        }
+        .card-actions {
+            grid-column: 2 / 3; /* Hành động ở cột 2 */
+            justify-self: end;
+            align-self: center; /* Căn giữa dọc */
+            flex-direction: column;
+            align-items: flex-end;
+        }
+         .filter-search-section { flex-direction: column; align-items: stretch;}
+         .filter-tabs { display: flex; flex-wrap: wrap; justify-content: center;}
+         .filter-tabs button { flex-grow: 1; text-align: center; margin-bottom: 0.5rem;}
+         .search-input { min-width: unset; width: 100%; }
+         .transaction-page-header h2 {font-size: 1.5rem;}
      }
+      @media (max-width: 480px) {
+          .transaction-card {
+            grid-template-columns: 1fr; /* 1 cột duy nhất */
+            border-left-width: 3px;
+            padding: 0.75rem 1rem;
+          }
+          .card-actions {
+            grid-column: 1 / 2; /* Chiếm hết cột 1 */
+            justify-self: stretch; /* Căn đều */
+            flex-direction: row; /* Lại xếp ngang */
+            justify-content: space-around; /* Phân bố đều nút */
+            margin-top: 0.75rem;
+            border-top: 1px solid var(--gray-100);
+            padding-top: 0.75rem;
+            gap: 0.3rem;
+          }
+          .btn-action { flex-grow: 1; font-size: var(--font-size-xs); }
+      }
+
 </style>
 
 <div class="dashboard-wrapper">
     <!-- Sidebar -->
     <?php include $project_root_path . '/includes/sidebar.php'; ?>
 
-    <!-- Main Content Area -->
-    <div class="content-wrapper" style="padding-top: 1rem;">
-        <!-- Header nhỏ trong content -->
-        <div class="content-header">
-            <div class="user-info">
-                <span>User ID: <span class="highlight"><?php echo htmlspecialchars($user_id); ?></span></span>
-                <span>|</span>
-                <span>Username: <span class="highlight"><?php echo htmlspecialchars($user_fullname); ?></span></span>
-            </div>
-             <span style="font-size: var(--font-size-sm); color: var(--gray-500);"><?php echo date('Y-m-d H:i:s'); ?> UTC</span>
+    <!-- Main Content -->
+    <main class="content-wrapper" style="padding: 1.5rem;">
+
+        <div class="transaction-page-header">
+             <h2>Quản Lý Giao Dịch</h2>
+             <!-- Có thể thêm nút như "Tải báo cáo" -->
         </div>
 
-        <!-- Wrapper chính -->
-        <div class="transactions-wrapper">
-            <h2 class="text-2xl font-semibold mb-5">Quản Lý Giao Dịch</h2>
-
-            <!-- Phần gửi minh chứng -->
-            <section class="upload-proof-section">
-                <!-- Nội dung form gửi minh chứng giữ nguyên -->
-                 <h3>Gửi Minh Chứng Thanh Toán Thủ Công</h3>
-                <form action="/path/to/upload/handler.php" method="POST" enctype="multipart/form-data" class="upload-proof-form">
-                     <div class="form-group">
-                         <label for="transaction_id">Mã giao dịch (Nếu có):</label>
-                         <input type="text" id="transaction_id" name="transaction_id" class="form-control" placeholder="Ví dụ: GD12346">
-                     </div>
-                     <div class="form-group">
-                         <label for="payment_proof">Chọn ảnh minh chứng:</label>
-                         <input type="file" id="payment_proof" name="payment_proof" class="form-control" accept="image/png, image/jpeg, image/jpg" required>
-                     </div>
-                    <div class="form-group">
-                         <label> </label>
-                        <button type="submit" class="btn-upload">
-                            <i class="fas fa-upload" style="margin-right: 5px;"></i> Gửi Minh Chứng
-                        </button>
-                    </div>
-                </form>
-                <p style="font-size: var(--font-size-xs); color: var(--gray-500); margin-top: 0.75rem;">
-                    * Vui lòng tải lên ảnh chụp màn hình hoặc biên lai chuyển khoản rõ ràng. Chỉ chấp nhận file ảnh (PNG, JPG, JPEG).
-                </p>
-            </section>
-
-            <!-- Bộ lọc và Tìm kiếm -->
-            <div class="filter-section">
-                <!-- Các nút lọc và ô tìm kiếm giữ nguyên -->
-                 <button class="filter-button active" data-filter="all">Tất cả</button>
+        <div class="filter-search-section">
+            <div class="filter-tabs">
+                <button class="filter-button active" data-filter="all">Tất cả</button>
                 <button class="filter-button" data-filter="completed">Hoàn thành</button>
-                <button class="filter-button" data-filter="pending">Chờ xử lý</button>
+                <button class="filter-button" data-filter="pending">Đang xử lý</button>
                 <button class="filter-button" data-filter="failed">Thất bại</button>
-                <input type="text" class="search-box" placeholder="Tìm theo ID, Mô tả...">
+                <!-- <button class="filter-button" data-filter="refunded">Đã hoàn tiền</button> -->
             </div>
-
-            <!-- Bảng danh sách giao dịch -->
-            <div class="transactions-table-wrapper">
-                <table class="transactions-table">
-                    <thead>
-                        <tr>
-                            <th>ID Giao dịch</th>
-                            <th>Thời gian</th>
-                            <th>Mô tả</th>
-                            <th>Số tiền</th>
-                            <th>Phương thức</th>
-                            <th style="text-align: center;">Trạng thái</th>
-                            <th style="text-align: right;">Hành động</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php if (!empty($transactions)): ?>
-                            <?php foreach ($transactions as $tx): ?>
-                                <?php $status_display = get_transaction_status_display($tx['status']); ?>
-                                <tr>
-                                    <td><strong><?php echo htmlspecialchars($tx['id']); ?></strong></td>
-                                    <td><?php echo htmlspecialchars($tx['timestamp']); ?></td>
-                                    <td><?php echo htmlspecialchars($tx['description']); ?></td>
-                                    <td class="amount"><?php echo number_format($tx['amount'], 0, ',', '.'); ?> đ</td>
-                                    <td><?php echo htmlspecialchars($tx['method']); ?></td>
-                                    <td class="status">
-                                        <span class="status-badge <?php echo $status_display['class']; ?>">
-                                            <?php echo $status_display['text']; ?>
-                                        </span>
-                                    </td>
-                                    <td class="actions">
-                                        <!-- Nút Xem chi tiết (Tùy chọn) -->
-                                        <button class="action-button btn-details" title="Xem chi tiết" onclick="alert('Xem chi tiết GD <?php echo $tx['id']; ?>')">
-                                            <i class="fas fa-eye"></i>
-                                        </button>
-
-                                        <!-- Nút Gửi minh chứng -->
-                                        <?php if ($tx['status'] === 'pending' && $tx['proof_needed']): ?>
-                                            <button class="action-button btn-upload-proof" title="Gửi minh chứng cho GD này" onclick="alert('Mở form/modal gửi minh chứng cho GD <?php echo $tx['id']; ?>')">
-                                                <i class="fas fa-upload"></i> Gửi MC
-                                            </button>
-                                        <?php endif; ?>
-
-                                        <!-- Nút Tải hóa đơn -->
-                                        <?php if ($tx['status'] === 'completed' && !empty($tx['invoice_id'])): ?>
-                                            <a href="/path/to/download/invoice.php?id=<?php echo htmlspecialchars($tx['invoice_id']); ?>" class="action-button btn-invoice" title="Tải hóa đơn <?php echo htmlspecialchars($tx['invoice_id']); ?>" download>
-                                                <i class="fas fa-file-invoice-dollar"></i> Hóa đơn
-                                            </a>
-                                        <?php endif; ?>
-
-                                        <!-- ** THÊM NÚT XEM LÝ DO CHO GIAO DỊCH THẤT BẠI ** -->
-                                        <?php if ($tx['status'] === 'failed'): ?>
-                                            <?php
-                                                // Lấy lý do, hoặc đặt mặc định nếu không có
-                                                $reason = htmlspecialchars($tx['failure_reason'] ?? 'Không có thông tin lý do.');
-                                            ?>
-                                            <button
-                                                class="action-button btn-reason"
-                                                title="Xem lý do thất bại"
-                                                onclick="showFailureReason('<?php echo htmlspecialchars($tx['id']); ?>', '<?php echo $reason; // Đã htmlspecialchars ?>')">
-                                                <i class="fas fa-info-circle"></i> Lý do
-                                            </button>
-                                        <?php endif; ?>
-                                        <!-- ** KẾT THÚC NÚT XEM LÝ DO ** -->
-
-                                    </td>
-                                </tr>
-                            <?php endforeach; ?>
-                        <?php else: ?>
-                             <!-- Dòng empty state giữ nguyên -->
-                             <tr> <td colspan="7"> <div class="empty-state" style="border: none; margin: 0; padding: 2rem 1rem;"> <i class="fas fa-receipt"></i> <p>Chưa có giao dịch nào.</p> </div> </td> </tr>
-                        <?php endif; ?>
-                    </tbody>
-                </table>
-            </div>
-
+            <input type="text" class="search-input" id="transaction-search" placeholder="Tìm theo Mã GD, Gói, Ngày...">
         </div>
-    </div>
+
+        <div class="transactions-list" id="transactions-list-container">
+            <?php if (empty($transactions)): ?>
+                <div class="empty-state">
+                    <h3>Chưa có giao dịch nào</h3>
+                    <p>Lịch sử giao dịch của bạn sẽ được hiển thị tại đây.</p>
+                    <a href="<?php echo $base_url; ?>/pages/purchase/package.php" class="buy-now-btn">Mua Tài Khoản Ngay</a>
+                </div>
+            <?php else: ?>
+                <?php foreach ($transactions as $txn): ?>
+                    <?php
+                        $status_class = 'status-' . $txn['status'];
+                        // Chuẩn bị các giá trị tìm kiếm (chữ thường)
+                        $search_terms = strtolower(
+                            $txn['transaction_code'] . ' ' .
+                            $txn['package_name'] . ' ' .
+                            $txn['payment_method'] . ' ' .
+                            format_datetime_display($txn['date']) . ' ' .
+                            number_format($txn['amount'], 0, '', '') // Tìm theo số tiền không có dấu phẩy
+                        );
+                    ?>
+                    <div class="transaction-card <?php echo $status_class; ?>" data-status="<?php echo $txn['status']; ?>" data-search-terms="<?php echo htmlspecialchars($search_terms); ?>" data-id="<?php echo $txn['id']; ?>">
+
+                        <!-- Cột 1: Mã GD & Ngày -->
+                        <div class="card-section">
+                            <span class="label">Mã giao dịch</span>
+                            <span class="value transaction-code"><?php echo htmlspecialchars($txn['transaction_code']); ?></span>
+                            <span class="label" style="margin-top: 0.5rem;">Ngày tạo</span>
+                            <span class="value"><?php echo format_datetime_display($txn['date']); ?></span>
+                        </div>
+
+                        <!-- Cột 2: Thông tin Gói & Số tiền -->
+                        <div class="card-section">
+                            <span class="label">Gói dịch vụ</span>
+                            <span class="value"><?php echo htmlspecialchars($txn['package_name']); ?> (SL: <?php echo $txn['quantity']; ?>)</span>
+                             <span class="label" style="margin-top: 0.5rem;">Tỉnh/Thành</span>
+                             <span class="value"><?php echo htmlspecialchars($txn['province']); ?></span>
+                             <span class="label" style="margin-top: 0.5rem;">Số tiền</span>
+                            <span class="value amount"><?php echo number_format($txn['amount'], 0, ',', '.'); ?> đ</span>
+                        </div>
+
+                        <!-- Cột 3: Phương thức & Trạng thái -->
+                         <div class="card-section">
+                            <span class="label">Phương thức TT</span>
+                            <span class="value"><?php echo htmlspecialchars($txn['payment_method']); ?></span>
+                            <span class="label" style="margin-top: 0.5rem;">Trạng thái</span>
+                            <span class="badge-status <?php echo $status_class; ?>">
+                                <?php
+                                    switch ($txn['status']) {
+                                        case 'completed': echo 'Hoàn thành'; break;
+                                        case 'pending': echo 'Đang xử lý'; break;
+                                        case 'failed': echo 'Thất bại'; break;
+                                        case 'refunded': echo 'Đã hoàn tiền'; break;
+                                        default: echo ucfirst($txn['status']); break;
+                                    }
+                                ?>
+                            </span>
+                        </div>
+
+                         <!-- Cột 4: Hành động -->
+                         <div class="card-actions">
+                              <button type="button" class="btn-action btn-details" title="Xem chi tiết giao dịch">
+                                  <i class="fas fa-eye"></i> Chi tiết
+                              </button>
+
+                              <?php // Chỉ cho upload nếu đang chờ và chưa upload ?>
+                              <button type="button"
+                                      class="btn-action btn-upload-proof <?php echo $txn['payment_proof_uploaded'] ? 'uploaded' : ''; ?>"
+                                      title="<?php echo $txn['payment_proof_uploaded'] ? 'Đã tải lên bằng chứng' : 'Tải lên bằng chứng thanh toán'; ?>"
+                                      <?php echo ($txn['status'] !== 'pending' || $txn['payment_proof_uploaded']) ? 'disabled' : ''; ?>
+                                      onclick="<?php echo !$txn['payment_proof_uploaded'] && $txn['status'] === 'pending' ? 'triggerUpload(\'' . $txn['id'] . '\')' : ''; ?>"
+                              >
+                                  <i class="fas <?php echo $txn['payment_proof_uploaded'] ? 'fa-check-circle' : 'fa-upload'; ?>"></i>
+                                  <?php echo $txn['payment_proof_uploaded'] ? 'Đã Upload' : 'Upload TT'; ?>
+                              </button>
+                               <input type="file" id="file-input-<?php echo $txn['id']; ?>" class="hidden-file-input" accept="image/*" onchange="handleFileSelect(this, '<?php echo $txn['id']; ?>')">
+
+
+                              <?php // Chỉ cho xuất hóa đơn nếu đã hoàn thành và có hóa đơn ?>
+                              <button type="button"
+                                      class="btn-action btn-invoice"
+                                      title="Xuất hóa đơn điện tử"
+                                      <?php echo ($txn['status'] !== 'completed' || !$txn['invoice_available']) ? 'disabled' : ''; ?>
+                                      onclick="<?php echo ($txn['status'] === 'completed' && $txn['invoice_available']) ? 'downloadInvoice(\'' . $txn['id'] . '\')' : ''; ?>"
+                                      >
+                                  <i class="fas fa-file-invoice-dollar"></i> Hóa đơn
+                              </button>
+                         </div>
+
+                    </div><!-- /.transaction-card -->
+                <?php endforeach; ?>
+            <?php endif; ?>
+        </div><!-- /.transactions-list -->
+
+    </main>
 </div>
 
 <script>
-// --- Hàm hiển thị lý do thất bại ---
-function showFailureReason(transactionId, reason) {
-    // Thay thế alert bằng modal hoặc cách hiển thị khác nếu muốn
-    alert(`Lý do thất bại cho GD #${transactionId}:\n\n${reason}`);
-}
-
 document.addEventListener('DOMContentLoaded', function() {
-    // --- Các đoạn script xử lý filter, search, upload form giữ nguyên ---
     const filterButtons = document.querySelectorAll('.filter-button');
-    const transactionRows = document.querySelectorAll('.transactions-table tbody tr');
-    filterButtons.forEach(button => { /* ... (code filter cũ) ... */
+    const searchInput = document.getElementById('transaction-search');
+    const transactionCards = document.querySelectorAll('.transaction-card');
+    const transactionsListContainer = document.getElementById('transactions-list-container');
+    const emptyStateHTML = `
+        <div class="empty-state">
+            <h3>Không tìm thấy giao dịch</h3>
+            <p>Không có giao dịch nào khớp với tiêu chí lọc hoặc tìm kiếm của bạn.</p>
+        </div>`;
+
+    // --- Hàm Lọc và Tìm kiếm ---
+    function filterAndSearchTransactions() {
+        const activeFilter = document.querySelector('.filter-button.active').getAttribute('data-filter');
+        const searchTerm = searchInput.value.toLowerCase().trim();
+        let matchFound = false;
+
+        transactionCards.forEach(card => {
+            const status = card.getAttribute('data-status');
+            const searchTerms = card.getAttribute('data-search-terms');
+
+            const statusMatch = (activeFilter === 'all' || status === activeFilter);
+            const searchMatch = (searchTerm === '' || searchTerms.includes(searchTerm));
+
+            if (statusMatch && searchMatch) {
+                card.style.display = 'grid'; // Hiện card (dùng grid vì display mặc định là grid)
+                matchFound = true;
+            } else {
+                card.style.display = 'none'; // Ẩn card
+            }
+        });
+
+        // Hiển thị trạng thái trống
+        const currentEmptyState = transactionsListContainer.querySelector('.empty-state');
+        if (!matchFound && !currentEmptyState) {
+            transactionsListContainer.insertAdjacentHTML('beforeend', emptyStateHTML);
+        } else if (matchFound && currentEmptyState) {
+            currentEmptyState.remove();
+        }
+    }
+
+    // --- Event Listener cho Nút Lọc ---
+    filterButtons.forEach(button => {
         button.addEventListener('click', function() {
             filterButtons.forEach(btn => btn.classList.remove('active'));
             this.classList.add('active');
-            const filterValue = this.getAttribute('data-filter');
-            transactionRows.forEach(row => {
-                 if (row.querySelector('.empty-state')) { row.style.display = ''; return; }
-                const statusCell = row.querySelector('td.status .status-badge');
-                let rowStatus = 'unknown';
-                if (statusCell) {
-                     if (statusCell.classList.contains('status-completed')) rowStatus = 'completed';
-                     else if (statusCell.classList.contains('status-pending')) rowStatus = 'pending';
-                     else if (statusCell.classList.contains('status-failed')) rowStatus = 'failed';
-                     else if (statusCell.classList.contains('status-cancelled')) rowStatus = 'cancelled';
-                }
-                if (filterValue === 'all' || rowStatus === filterValue) { row.style.display = ''; }
-                else { row.style.display = 'none'; }
-            });
+            filterAndSearchTransactions();
         });
     });
 
-    const searchBox = document.querySelector('.search-box');
-    searchBox.addEventListener('input', function(e) { /* ... (code search cũ) ... */
-        const searchTerm = e.target.value.toLowerCase().trim();
-        transactionRows.forEach(row => {
-             if (row.querySelector('.empty-state')) { row.style.display = ''; return; }
-            const idCell = row.cells[0]?.textContent.toLowerCase() || '';
-            const descCell = row.cells[2]?.textContent.toLowerCase() || '';
-            if (idCell.includes(searchTerm) || descCell.includes(searchTerm)) { row.style.display = ''; }
-            else { row.style.display = 'none'; }
-        });
+    // --- Event Listener cho Ô Tìm kiếm ---
+    searchInput.addEventListener('input', filterAndSearchTransactions);
+
+
+    // --- Event Listener cho Nút Xem Chi Tiết (Placeholder) ---
+    transactionsListContainer.addEventListener('click', function(event) {
+        if (event.target.closest('.btn-details')) {
+            const card = event.target.closest('.transaction-card');
+            const transactionId = card.getAttribute('data-id');
+            // Thay thế bằng logic thực tế (mở modal, hiển thị div ẩn,...)
+            alert('Xem chi tiết giao dịch ID: ' + transactionId + '\n' +
+                  'Mã GD: ' + card.querySelector('.transaction-code').textContent + '\n' +
+                  'Gói: ' + card.querySelectorAll('.value')[1].textContent + '\n' + // Chỉ là ví dụ lấy text
+                  'Số tiền: ' + card.querySelector('.amount').textContent + '\n' +
+                  'Trạng thái: ' + card.querySelector('.badge-status').textContent.trim() + '\n' +
+                  'Ngày: ' + card.querySelectorAll('.value')[3].textContent
+                 );
+        }
     });
 
-    const uploadForm = document.querySelector('.upload-proof-form');
-    if (uploadForm) { /* ... (code validation form upload cũ) ... */
-        uploadForm.addEventListener('submit', function(event) {
-            const fileInput = document.getElementById('payment_proof');
-            if (!fileInput || fileInput.files.length === 0) { alert('Vui lòng chọn ảnh minh chứng.'); event.preventDefault(); return; }
-            const file = fileInput.files[0];
-            const allowedTypes = ['image/png', 'image/jpeg', 'image/jpg'];
-            if (!allowedTypes.includes(file.type)) { alert('Chỉ chấp nhận file ảnh PNG, JPG, JPEG.'); event.preventDefault(); return; }
-            // alert('Đang gửi minh chứng (Cần xử lý phía server)...');
-            // event.preventDefault();
-        });
-    }
 });
+
+// --- Hàm Placeholder cho Upload và Invoice ---
+function triggerUpload(transactionId) {
+    // Kích hoạt input file ẩn tương ứng
+    const fileInput = document.getElementById(`file-input-${transactionId}`);
+    if (fileInput) {
+        fileInput.click(); // Mở hộp thoại chọn file
+    } else {
+        console.error('File input not found for transaction:', transactionId);
+    }
+}
+
+function handleFileSelect(inputElement, transactionId) {
+     const file = inputElement.files[0];
+     if (file) {
+        console.log('File selected for transaction:', transactionId, file.name, file.type, file.size);
+        // --- Logic Upload thực tế sẽ ở đây ---
+        // 1. Kiểm tra loại file, kích thước
+        // 2. Tạo FormData
+        // 3. Gửi AJAX request lên server để upload
+        // 4. Xử lý kết quả trả về (thành công/lỗi)
+        // 5. Cập nhật giao diện (ví dụ: đổi nút thành "Đã Upload")
+        alert(`Giả lập: Đã chọn file "${file.name}" cho GD #${transactionId}. \nSẵn sàng để upload lên server.`);
+
+         // Ví dụ cập nhật nút sau khi chọn file (chưa upload thực)
+         const uploadButton = inputElement.closest('.transaction-card').querySelector('.btn-upload-proof');
+         if(uploadButton){
+             // uploadButton.classList.add('uploaded');
+             // uploadButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang upload...'; // Ví dụ
+             // uploadButton.disabled = true;
+         }
+
+     } else {
+         console.log('No file selected for transaction:', transactionId);
+     }
+      // Reset input để có thể chọn lại cùng file nếu cần
+      inputElement.value = null;
+}
+
+
+function downloadInvoice(transactionId) {
+    // --- Logic Tạo và Tải Hóa Đơn thực tế sẽ ở đây ---
+    // 1. Gửi yêu cầu AJAX lên server với transactionId
+    // 2. Server kiểm tra quyền, tạo file hóa đơn (PDF,...)
+    // 3. Server trả về link tải hoặc trực tiếp file
+    alert('Chức năng Xuất Hóa Đơn cho GD #' + transactionId + ' chưa được cài đặt.');
+    // Ví dụ chuyển hướng đến link tải (nếu server trả về link)
+    // window.location.href = `/generate_invoice.php?txn_id=${transactionId}`;
+}
+
 </script>
 
 <?php

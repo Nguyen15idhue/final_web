@@ -10,8 +10,7 @@
     
     <!-- Your CSS files -->
     <link rel="stylesheet" href="/assets/css/style.css">
-    <link rel="stylesheet" href="/assets/css/sidebar.css">
-    <link rel="stylesheet" href="/assets/css/map-display.css">
+
     
     <!-- Add this style for dashboard specific layout -->
     <style>

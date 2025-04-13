@@ -19,7 +19,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         if ($user && password_verify($password, $user['password'])) {
             $_SESSION['user_id'] = $user['id'];
-            $_SESSION['fullname'] = $user['fullname'];
+            $_SESSION['username'] = $user['username'];
             $_SESSION['email'] = $user['email'];
             // Chuyển hướng đến Dashboard
             header('Location: /your_project_root/pages/dashboard.php');

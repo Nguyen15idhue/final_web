@@ -130,7 +130,7 @@ $crc_value = crc16($qr_payload); // Tính CRC
 $final_qr_payload = $qr_payload . $crc_value; // Payload hoàn chỉnh cho QR Code
 
 // --- User Info ---
-$user_fullname = $_SESSION['fullname'] ?? 'Người dùng';
+$user_username = $_SESSION['username'] ?? 'Người dùng';
 
 // --- Include Header ---
 include $project_root_path . '/includes/header.php';

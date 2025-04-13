@@ -24,7 +24,7 @@ if (!isset($_SESSION['user_id'])) {
 
 // --- Dữ liệu người dùng (Ví dụ - Lấy từ Session) ---
 // Bạn có thể cần các biến này cho header hoặc sidebar
-$user_fullname = $_SESSION['fullname'] ?? 'Người dùng';
+$user_username = $_SESSION['username'] ?? 'Người dùng';
 
 // --- Bao gồm Header ---
 // Sử dụng đường dẫn tuyệt đối dựa trên project_root_path

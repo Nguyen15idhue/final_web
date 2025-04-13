@@ -19,20 +19,9 @@ include '../includes/header.php';
 <!-- Nhúng CSS trực tiếp trong head -->
 <style>
 /* Dashboard Layout */
-.dashboard-wrapper {
-    display: grid;
-    grid-template-columns: var(--sidebar-width) 1fr; /* Sidebar width từ biến CSS */
-    min-height: 100vh;
-    background-color: var(--gray-100);
-}
+
 
 /* Main Content Area */
-.content-wrapper {
-    padding: 1.5rem;
-    background: white;
-    border-radius: var(--rounded-lg);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
 
 /* Stats Grid */
 .stats-grid {

@@ -59,7 +59,7 @@ $provinces = [
 ];
 
 // --- User Info ---
-$user_fullname = $_SESSION['fullname'] ?? 'Người dùng';
+$user_username = $_SESSION['username'] ?? 'Người dùng';
 
 // --- Include Header ---
 include $project_root_path . '/includes/header.php';
