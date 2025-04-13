@@ -85,7 +85,7 @@ include $project_root_path . '/includes/header.php';
     <!-- Main Content -->
     <main class="content-wrapper">
         <!-- Tiêu đề trang -->
-        <h2 class="text-2xl font-semibold mb-6">Map Display</h2>
+        <h2 class="text-2xl font-semibold mb-6">Bản đồ trạm base</h2>
 
         <!-- Phần tử div để hiển thị bản đồ Google Map -->
         <div id="map">
